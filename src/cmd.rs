@@ -129,7 +129,7 @@ pub fn expand(binary: Option<&String>) -> Result<String> {
     } else {
         // vomit stdout and stderr if it fails
         Err(error_other(format!(
-            "Cannot run `rustup run nightly cargo rustc --profile=check -- -Zunpretty=expanded`, stdout: {}, stderr: {}",
+            "Cannot expand code, install nightly rust and pass the --binary arguments , stdout: {}, stderr: {}",
             String::from_utf8_lossy(&cmd.stdout),
             String::from_utf8_lossy(&cmd.stderr)
         )))
