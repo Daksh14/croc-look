@@ -38,10 +38,10 @@ pub struct Args {
     /// function to expand
     #[clap(short, long, value_parser)]
     function: Option<String>,
-    /// Path of the file to watch, if specified then the proc macro output is logged
+    /// Path of the dir/file to watch, if specified then the proc macro output is logged
     /// if a change is detected
     #[clap(short, long, value_parser)]
-    watch_file: Option<String>,
+    watch: Option<String>,
 }
 
 fn main() -> Result<()> {
@@ -57,7 +57,7 @@ fn main() -> Result<()> {
         ));
     }
 
-    if let Some(ref file) = ctx.args.watch_file {
+    if let Some(ref file) = ctx.args.watch {
         enable_raw_mode()?;
 
         let mut stdout = io::stdout();
