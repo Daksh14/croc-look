@@ -36,8 +36,8 @@ pub fn loc_trait_impl(name: &str, code: TokenStream, impl_for: Option<&str>) -> 
             match token {
                 TokenTree::Ident(ident) if ident == &get_ident("for") => {
                     if let Some(struct_ident) = impl_for {
-                        iter.next();
-                        if let Some(next_ident) = iter.next() {
+                        collection.push(iter.next().unwrap());
+                        if let Some(next_ident) = iter.peek() {
                             match next_ident {
                                 TokenTree::Ident(next_ident) => {
                                     if next_ident != struct_ident {
