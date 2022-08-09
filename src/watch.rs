@@ -1,50 +1,73 @@
-use crate::{look, Args};
+use crate::{error_other, Context, Event as LookEvent};
 
-use std::io::{self, stdout};
-use std::sync::mpsc::channel;
+use std::io::Result;
+use std::thread;
 
-use crossterm::{
-    cursor::MoveUp,
-    execute,
-    terminal::{Clear, ClearType},
-};
-use loading::Loading;
-use notify::{raw_watcher, RawEvent, RecursiveMode, Watcher};
+use crossterm::event::{read, Event as CrossTermEvent, KeyCode, KeyEvent, KeyModifiers};
+use hotwatch::{Event, Hotwatch};
 
-pub fn watch(path: &str, loading: &Loading, args: &Args) -> Result<(), io::Error> {
-    loading.info(format!("Watching file: {}", path));
+pub fn watch(path: &str, ctx: &Context) -> Result<Hotwatch> {
+    let mut hotwatch =
+        Hotwatch::new().map_err(|e| error_other(format!("Cannot Initisalize hotwatch: {}", e)))?;
 
-    let (tx, rx) = channel();
+    let ctx = ctx.clone();
 
-    match raw_watcher(tx) {
-        Ok(mut watcher) => {
-            if let Err(e) = watcher.watch(path, RecursiveMode::Recursive) {
-                loading.fail(format!("Cannot watch file, {}", e));
-                return Ok(());
+    hotwatch
+        .watch(path, move |event| {
+            if let Event::Write(_) = event {
+                let _ = ctx.send(LookEvent::FileUpdate);
             }
+        })
+        .map_err(|e| error_other(format!("Cannot Watch file: {}", e)))?;
 
-            loop {
-                match rx.recv() {
-                    Ok(RawEvent {
-                        path: Some(path),
-                        op: Ok(op),
-                        ..
-                    }) => {
-                        execute!(stdout(), Clear(ClearType::FromCursorDown))?;
+    Ok(hotwatch)
+}
 
-                        if args.log_change == Some(true) {
-                            println!("{:?} {:?} \n", op, path);
-                        }
+pub fn watch_events(ctx: &Context) -> Result<()> {
+    let ctx = ctx.clone();
 
-                        execute!(stdout(), MoveUp(look(args, loading)?))?;
-                    }
-                    Ok(event) => println!("broken event: {:?}", event),
-                    Err(e) => loading.fail(format!("Watch error, {}", e)),
-                }
+    thread::spawn(move || loop {
+        match read() {
+            Ok(CrossTermEvent::Key(KeyEvent {
+                code: KeyCode::Char('q'),
+                modifiers: KeyModifiers::NONE,
+            })) => return ctx.send(LookEvent::Interrupt),
+            Ok(CrossTermEvent::Key(KeyEvent {
+                code: KeyCode::Up,
+                modifiers: KeyModifiers::NONE,
+            })) => {
+                ctx.send(LookEvent::KeyArrowUp)?;
             }
+            Ok(CrossTermEvent::Key(KeyEvent {
+                code: KeyCode::Down,
+                modifiers: KeyModifiers::NONE,
+            })) => {
+                ctx.send(LookEvent::KeyArrowDown)?;
+            }
+            Ok(CrossTermEvent::Key(KeyEvent {
+                code: KeyCode::Right,
+                modifiers: KeyModifiers::NONE,
+            })) => {
+                ctx.send(LookEvent::KeyArrowRight)?;
+            }
+            Ok(CrossTermEvent::Key(KeyEvent {
+                code: KeyCode::Left,
+                modifiers: KeyModifiers::NONE,
+            })) => {
+                ctx.send(LookEvent::KeyArrowLeft)?;
+            }
+            Ok(CrossTermEvent::Key(KeyEvent {
+                code: KeyCode::Char('r'),
+                modifiers: KeyModifiers::NONE,
+            })) => {
+                ctx.send(LookEvent::FileUpdate)?;
+            }
+            Ok(CrossTermEvent::Resize(_, _)) => {
+                ctx.send(LookEvent::Resize)?;
+            }
+            _ => (),
         }
-        Err(e) => loading.fail(format!("Cannot watch file, {}", e)),
-    }
+    });
 
     Ok(())
 }
