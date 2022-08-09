@@ -32,6 +32,9 @@ pub struct Args {
     /// Find the struct for which the impl is for (won't work if trait_impl (-t) is not set)
     #[clap(short, long, value_parser)]
     impl_for: Option<String>,
+    /// Pass the --binary BINARY flag to cargo rustc to expand lib, if not specified, --lib is used
+    #[clap(short, long, value_parser)]
+    binary: Option<String>,
     /// Struct macro to expand
     #[clap(short, long, value_parser)]
     structure: Option<String>,

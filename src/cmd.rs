@@ -71,7 +71,7 @@ impl Context {
     }
 
     pub fn c_trait(&self, ident: &str, impl_for: Option<&str>) -> Result<String> {
-        let code = expand()?;
+        let code = expand(self.args.binary.as_ref())?;
         loc_trait_impl(ident, syn::parse_str(&code).unwrap(), impl_for)
             .as_ref()
             .map(|e| self.format_code(e))
@@ -79,7 +79,7 @@ impl Context {
     }
 
     pub fn c_struct(&self, ident: &str) -> Result<String> {
-        let code = expand()?;
+        let code = expand(self.args.binary.as_ref())?;
         loc_struct(ident, syn::parse_str(&code).unwrap())
             .as_ref()
             .map(|e| self.format_code(e))
@@ -87,7 +87,7 @@ impl Context {
     }
 
     pub fn c_func(&self, ident: &str) -> Result<String> {
-        let code = expand()?;
+        let code = expand(self.args.binary.as_ref())?;
         loc_function(ident, syn::parse_str(&code).unwrap())
             .as_ref()
             .map(|e| self.format_code(e))
@@ -96,23 +96,40 @@ impl Context {
 }
 
 // requires nightly
-pub fn expand() -> Result<String> {
-    let cmd = Command::new("rustup")
-        .arg("run")
-        .arg("nightly")
-        .arg("cargo")
-        .arg("rustc")
-        .arg("--profile=check")
-        .arg("--")
-        .arg("-Zunpretty=expanded")
-        .output()?;
+pub fn expand(binary: Option<&String>) -> Result<String> {
+    let cmd;
+
+    if let Some(binary) = binary {
+        cmd = Command::new("rustup")
+            .arg("run")
+            .arg("nightly")
+            .arg("cargo")
+            .arg("rustc")
+            .arg("--bin")
+            .arg(binary)
+            .arg("--profile=check")
+            .arg("--")
+            .arg("-Zunpretty=expanded")
+            .output()?;
+    } else {
+        cmd = Command::new("rustup")
+            .arg("run")
+            .arg("nightly")
+            .arg("cargo")
+            .arg("rustc")
+            .arg("--lib")
+            .arg("--profile=check")
+            .arg("--")
+            .arg("-Zunpretty=expanded")
+            .output()?;
+    }
 
     if cmd.status.success() {
         Ok(String::from_utf8_lossy(&cmd.stdout).to_string())
     } else {
         // vomit stdout and stderr if it fails
         Err(error_other(format!(
-            "Cannot format code, stdout: {}, stderr: {}",
+            "Cannot run `rustup run nightly cargo rustc --profile=check -- -Zunpretty=expanded`, stdout: {}, stderr: {}",
             String::from_utf8_lossy(&cmd.stdout),
             String::from_utf8_lossy(&cmd.stderr)
         )))
