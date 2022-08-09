@@ -94,6 +94,7 @@ fn main() -> Result<()> {
     } else {
         let now = Instant::now();
         let loading = Loading::default();
+
         loading.info("Running..");
         loading.end();
 
@@ -170,10 +171,13 @@ fn croc_start(
 
 fn look(ctx: &Context) -> Result<(String, String)> {
     if let Some(ident) = &ctx.args.trait_impl {
-        return Ok((
-            ctx.c_trait(ident, ctx.args.impl_for.as_deref())?,
-            format!("Expanding trait: {}", ident),
-        ));
+        let msg: String;
+        if let Some(struct_ident) = &ctx.args.impl_for {
+            msg = format!("Expanding trait: {} for {}", ident, struct_ident);
+        } else {
+            msg = format!("Expanding trait: {}", ident);
+        }
+        return Ok((ctx.c_trait(ident, ctx.args.impl_for.as_deref())?, msg));
     }
 
     if let Some(ident) = &ctx.args.structure {
