@@ -34,7 +34,9 @@ So the value for this flag can be either `Clone`, `Debug` or whatever trait your
 
 4. `--function` or `-f`: For expanding a function.
 
-5. `--watch` or `-w`: This starts watching the directory/file you want to watch, this also opens up an interactive TUI which has support for **live reloading** changes as you do them in your proc-macro project. 
+5. `--binary` or `-b`: To expand a `cargo --bin BINARY`, if not specified then `--lib` is used
+
+6. `--watch` or `-w`: This starts watching the directory/file you want to watch, this also opens up an interactive TUI which has support for **live reloading** changes as you do them in your proc-macro project. 
 
 There is currently no way to narrow down searches for functions and structs for a particular module but I'll soon implement that, for now you can create a new project and use the macro there to test.
 
