@@ -15,6 +15,10 @@ croc-look requires a nightly toolchain _installed_, it does not need to be the d
 ```
 rustup install nightly
 ```
+Then
+```
+cargo install croc-look
+```
 
 ### Flags
 
