@@ -124,7 +124,7 @@ pub fn expand(args: &Args) -> Result<String> {
 
     if let Some(path) = &args.path {
         cmd = Command::new("cargo");
-        cmd.arg("expand").arg(path);
+        cmd.arg("expad").arg(path);
     }
 
     let output = cmd.output()?;
@@ -134,7 +134,7 @@ pub fn expand(args: &Args) -> Result<String> {
     } else {
         // vomit stdout and stderr if it fails
         Err(error_other(format!(
-            "Cannot expand code, install nightly rust and pass the --binary arguments , stdout: {}, stderr: {}",
+            "Cannot expand code, stdout: {}, stderr: {}",
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr)
         )))
