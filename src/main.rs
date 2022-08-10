@@ -29,7 +29,7 @@ pub struct Args {
     /// Trait to expand, choose the trait your proc macro is implementing
     #[clap(short, long, value_parser)]
     trait_impl: Option<String>,
-    /// Find the struct for which the impl is for (won't work if trait_impl (-t) is not set)
+    /// Find the struct for which the impl is for (won't work if trait-impl (-t) is not set)
     #[clap(short, long, value_parser)]
     impl_for: Option<String>,
     /// Pass the --binary BINARY flag to cargo rustc to expand lib, if not specified, --lib is used
