@@ -101,7 +101,7 @@ fn main() -> Result<()> {
         let now = Instant::now();
         let loading = Loading::default();
 
-        loading.info("..");
+        loading.info("Running..");
         loading.end();
 
         println!(
