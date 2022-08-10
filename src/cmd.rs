@@ -71,7 +71,7 @@ impl Context {
     }
 
     pub fn c_trait(&self, ident: &str, impl_for: Option<&str>) -> Result<String> {
-        let code = expand(self.args.binary.as_ref())?;
+        let code = expand(&self.args)?;
         loc_trait_impl(ident, syn::parse_str(&code).unwrap(), impl_for)
             .as_ref()
             .map(|e| self.format_code(e))
@@ -79,7 +79,7 @@ impl Context {
     }
 
     pub fn c_struct(&self, ident: &str) -> Result<String> {
-        let code = expand(self.args.binary.as_ref())?;
+        let code = expand(&self.args)?;
         loc_struct(ident, syn::parse_str(&code).unwrap())
             .as_ref()
             .map(|e| self.format_code(e))
@@ -87,7 +87,7 @@ impl Context {
     }
 
     pub fn c_func(&self, ident: &str) -> Result<String> {
-        let code = expand(self.args.binary.as_ref())?;
+        let code = expand(&self.args)?;
         loc_function(ident, syn::parse_str(&code).unwrap())
             .as_ref()
             .map(|e| self.format_code(e))
@@ -96,12 +96,12 @@ impl Context {
 }
 
 // requires nightly
-pub fn expand(binary: Option<&String>) -> Result<String> {
-    let cmd;
+pub fn expand(args: &Args) -> Result<String> {
+    let mut cmd;
 
-    if let Some(binary) = binary {
-        cmd = Command::new("rustup")
-            .arg("run")
+    cmd = Command::new("rustup");
+    if let Some(binary) = &args.binary {
+        cmd.arg("run")
             .arg("nightly")
             .arg("cargo")
             .arg("rustc")
@@ -109,29 +109,34 @@ pub fn expand(binary: Option<&String>) -> Result<String> {
             .arg(binary)
             .arg("--profile=check")
             .arg("--")
-            .arg("-Zunpretty=expanded")
-            .output()?;
+            .arg("-Zunpretty=expanded");
     } else {
-        cmd = Command::new("rustup")
-            .arg("run")
+        cmd = Command::new("rustup");
+        cmd.arg("run")
             .arg("nightly")
             .arg("cargo")
             .arg("rustc")
             .arg("--lib")
             .arg("--profile=check")
             .arg("--")
-            .arg("-Zunpretty=expanded")
-            .output()?;
+            .arg("-Zunpretty=expanded");
     }
 
-    if cmd.status.success() {
-        Ok(String::from_utf8_lossy(&cmd.stdout).to_string())
+    if let Some(path) = &args.path {
+        cmd = Command::new("cargo");
+        cmd.arg("expand").arg(path);
+    }
+
+    let output = cmd.output()?;
+
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
     } else {
         // vomit stdout and stderr if it fails
         Err(error_other(format!(
             "Cannot expand code, install nightly rust and pass the --binary arguments , stdout: {}, stderr: {}",
-            String::from_utf8_lossy(&cmd.stdout),
-            String::from_utf8_lossy(&cmd.stderr)
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
         )))
     }
 }

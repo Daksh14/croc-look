@@ -35,6 +35,9 @@ pub struct Args {
     /// Pass the --binary BINARY flag to cargo rustc to expand lib, if not specified, --lib is used
     #[clap(short, long, value_parser)]
     binary: Option<String>,
+    /// Use cargo expand <path>
+    #[clap(short, long, value_parser)]
+    path: Option<String>,
     /// Struct macro to expand
     #[clap(short, long, value_parser)]
     structure: Option<String>,
@@ -76,7 +79,7 @@ fn main() -> Result<()> {
         if let Some(err) = watch_events(&ctx).err() {
             end(&mut terminal)?;
             return Err(err);
-        }
+        };
 
         // render UI
         if let Some(err) = terminal.draw(|e| tui.render(e, tui.components(now))).err() {
@@ -98,7 +101,7 @@ fn main() -> Result<()> {
         let now = Instant::now();
         let loading = Loading::default();
 
-        loading.info("Running..");
+        loading.info("..");
         loading.end();
 
         println!(
@@ -166,7 +169,6 @@ fn croc_start(
             Err(e) => return Err(error_other(format!("Reciving error: {}", e))),
         }
     }
-
     end(terminal)?;
 
     Ok(())
