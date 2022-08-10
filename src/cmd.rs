@@ -124,7 +124,7 @@ pub fn expand(args: &Args) -> Result<String> {
 
     if let Some(path) = &args.path {
         cmd = Command::new("cargo");
-        cmd.arg("expad").arg(path);
+        cmd.arg("expand").arg(path);
     }
 
     let output = cmd.output()?;
