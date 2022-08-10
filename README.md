@@ -32,15 +32,19 @@ So the value for this flag can be either `Clone`, `Debug` or whatever trait your
 
 3. `--structure` or `-s`: If you want to expand a _particlar_ struct. This is useful when a macro is manupilating the struct itself, like adding fields, etc.
 
-4. `--function` or `-f`: For expanding a function.
+4. `--path` or `-p`: (requies [cargo expand](https://github.com/dtolnay/cargo-expand) to be installed) Use `cargo expand <path>` internally to narrow down code to modules. eg `croc-look -p cmd -t Clone -i Context` (Look at the impl Clone for Context in cmd module)
 
-5. `--binary` or `-b`: To expand a `cargo --bin BINARY`, if not specified then `--lib` is used
+5. `--function` or `-f`: For expanding a function.
 
-6. `--watch` or `-w`: This starts watching the directory/file you want to watch, this also opens up an interactive TUI which has support for **live reloading** changes as you do them in your proc-macro project. 
+6. `--binary` or `-b`: To expand a `cargo --bin BINARY`, if not specified then `--lib` is used
 
-Ideas for nee features
-1. Narrowing traits, functions and structs per module
-2. Struct impl
+7. `--watch` or `-w`: This starts watching the directory/file you want to watch, this also opens up an interactive TUI which has support for **live reloading** changes as you do them in your proc-macro project. 
+
+### How is this different from [cargo expand](https://github.com/dtolnay/cargo-expand)?
+cargo expand doesn't allow you to view a whole trait impl to check generics or watch particular code blocks. The motive of croc-look is to narry down your search to a simple single body and reduce cluter. 
+
+You can use the `--path` flag to use `cargo expand <path>` to narrow down searches module level
+
 
 #### License
 
