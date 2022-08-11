@@ -80,8 +80,9 @@ impl Context {
 
     pub fn c_struct(&self, ident: &str) -> Result<String> {
         let code = expand(&self.args)?;
-        loc_struct(ident, syn::parse_str(&code).unwrap())
-            .as_ref()
+        let x = loc_struct(ident, syn::parse_str(&code).unwrap());
+        println!("{:?}", x);
+        x.as_ref()
             .map(|e| self.format_code(e))
             .ok_or_else(|| Error::from(ErrorKind::NotFound))?
     }

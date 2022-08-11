@@ -82,17 +82,24 @@ pub fn loc_trait_impl(name: &str, code: TokenStream, impl_for: Option<&str>) -> 
             TokenTree::Ident(ref ident) => {
                 if ident == &get_ident("impl") {
                     let mut collection = vec![tree];
-                    while let Some(x) = iter.peek() {
+                    while let Some(x) = iter.next() {
                         match x {
-                            TokenTree::Ident(ident) if ident == &get_ident(name) => {
+                            TokenTree::Ident(ref ident) if ident == &get_ident(name) => {
+                                collection.push(x);
                                 if let Some(x) =
                                     find_after_for(&mut iter, &mut collection, impl_for)
                                 {
                                     return Some(x);
                                 }
                             }
+                            TokenTree::Group(group) => {
+                                if let Some(string) = loc_trait_impl(name, group.stream(), impl_for)
+                                {
+                                    return Some(string);
+                                }
+                            }
                             // UNWRAP: iter.peek() is some
-                            _ => collection.push(iter.next().unwrap()),
+                            _ => collection.push(x),
                         }
                     }
                 }
@@ -100,6 +107,7 @@ pub fn loc_trait_impl(name: &str, code: TokenStream, impl_for: Option<&str>) -> 
             _ => (),
         }
     }
+
     None
 }
 
@@ -124,6 +132,11 @@ pub fn loc_struct(name: &str, code: TokenStream) -> Option<String> {
                             for x in iter.by_ref() {
                                 if let TokenTree::Group(_) = x {
                                     collection.push(x);
+                                    if let Some(TokenTree::Punct(punct)) = iter.peek() {
+                                        if ';' == punct.as_char() {
+                                            collection.push(iter.next().unwrap());
+                                        }
+                                    }
 
                                     return Some(stream_to_string(collection));
                                 }
