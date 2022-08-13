@@ -2,16 +2,21 @@ use std::iter::Peekable;
 
 use proc_macro2::{Delimiter, Ident, Span, TokenStream, TokenTree};
 
+/// helper function to generate ident from string
 pub fn get_ident<T: AsRef<str>>(name: T) -> Ident {
     Ident::new(name.as_ref(), Span::call_site())
 }
 
+/// helper function to map a stream to string
 pub fn stream_to_string(vec: Vec<TokenTree>) -> String {
     let mut stream = TokenStream::new();
     stream.extend(vec.into_iter());
     stream.to_string()
 }
 
+/// the locate functions store a "buffer" that contains some tokens.
+/// This filters out those tokens, looks for the ident "impl" and gets
+/// everything after that in a tokenstream
 pub fn get_after_impl(vec: &[TokenTree]) -> Vec<TokenTree> {
     let mut index = 0;
     vec.iter().enumerate().for_each(|(inner_index, value)| {
@@ -26,6 +31,7 @@ pub fn get_after_impl(vec: &[TokenTree]) -> Vec<TokenTree> {
     slice.to_vec()
 }
 
+/// Locate the trait which we are looking for, match with struct if given
 pub fn loc_trait_impl(name: &str, code: TokenStream, impl_for: Option<&str>) -> Option<String> {
     fn find_after_for(
         iter: &mut Peekable<impl Iterator<Item = TokenTree>>,
@@ -34,21 +40,27 @@ pub fn loc_trait_impl(name: &str, code: TokenStream, impl_for: Option<&str>) -> 
     ) -> Option<String> {
         while let Some(token) = iter.peek() {
             match token {
+                // find the ident "for"
                 TokenTree::Ident(ident) if ident == &get_ident("for") => {
+                    // check if struct is provided
                     if let Some(struct_ident) = impl_for {
                         collection.push(iter.next().unwrap());
-                        if let Some(next_ident) = iter.peek() {
-                            match next_ident {
-                                TokenTree::Ident(next_ident) => {
-                                    if next_ident != struct_ident {
-                                        return None;
-                                    }
+
+                        match iter.peek() {
+                            Some(TokenTree::Ident(next_ident)) => {
+                                if next_ident != struct_ident {
+                                    // if it's not the struct we're looking for, return early
+                                    return None;
                                 }
-                                _ => return None,
                             }
+                            // since we have to look for a particular struct here, we get to be
+                            // strict
+                            _ => return None,
                         }
                     }
-                    while let Some(token) = iter.peek() {
+                    // grab the rest
+                    while let Some(token) = iter.next() {
+                        collection.push(iter.next().unwrap());
                         match token {
                             TokenTree::Group(group) if group.delimiter() == Delimiter::Brace => {
                                 let mut stream = TokenStream::new();
@@ -58,8 +70,7 @@ pub fn loc_trait_impl(name: &str, code: TokenStream, impl_for: Option<&str>) -> 
 
                                 return Some(stream.to_string());
                             }
-                            // UNWRAP: iter.peek() is some
-                            _ => collection.push(iter.next().unwrap()),
+                            _ => (),
                         }
                     }
                 }
@@ -79,28 +90,23 @@ pub fn loc_trait_impl(name: &str, code: TokenStream, impl_for: Option<&str>) -> 
                     return Some(string);
                 }
             }
-            TokenTree::Ident(ref ident) => {
-                if ident == &get_ident("impl") {
-                    let mut collection = vec![tree];
-                    while let Some(x) = iter.next() {
-                        match x {
-                            TokenTree::Ident(ref ident) if ident == &get_ident(name) => {
-                                collection.push(x);
-                                if let Some(x) =
-                                    find_after_for(&mut iter, &mut collection, impl_for)
-                                {
-                                    return Some(x);
-                                }
+            TokenTree::Ident(ref ident) if ident == &get_ident("impl") => {
+                let mut collection = vec![tree];
+
+                while let Some(x) = iter.next() {
+                    match x {
+                        TokenTree::Ident(ref ident) if ident == &get_ident(name) => {
+                            collection.push(x);
+                            if let Some(x) = find_after_for(&mut iter, &mut collection, impl_for) {
+                                return Some(x);
                             }
-                            TokenTree::Group(group) => {
-                                if let Some(string) = loc_trait_impl(name, group.stream(), impl_for)
-                                {
-                                    return Some(string);
-                                }
-                            }
-                            // UNWRAP: iter.peek() is some
-                            _ => collection.push(x),
                         }
+                        TokenTree::Group(group) => {
+                            if let Some(string) = loc_trait_impl(name, group.stream(), impl_for) {
+                                return Some(string);
+                            }
+                        }
+                        _ => collection.push(x),
                     }
                 }
             }

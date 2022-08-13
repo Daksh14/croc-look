@@ -58,7 +58,7 @@ impl CrocTui {
         }
     }
 
-    pub fn code_block(&mut self, code_block: String) -> &mut Self {
+    pub fn set_code_block(&mut self, code_block: String) -> &mut Self {
         self.code_block = code_block;
         self
     }
