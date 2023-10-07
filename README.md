@@ -3,8 +3,8 @@
 
 croc-look is a tool to make testing and debuging proc macros easier by these two features
 
-1. Printing the implementation specific generated code to the console
-2. Giving a real time live view of the output of the macro on rust code
+1. Printing the output of the procedural macro code to the console.
+2. Giving a real time live view of the output of the macro on rust code.
 
 croc-look allows you to narrow down your search and also provide real time view of the generated code.
 
